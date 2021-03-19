@@ -27,6 +27,8 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -46,6 +48,7 @@ public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, 
 	private CanalConfig canalConfig;
 	private CanalConnector connector;
 	private ApplicationContext applicationContext;
+	private ExecutorService watchAckRollBackExecutorService = Executors.newFixedThreadPool(2);
 	private static ArrayBlockingQueue<Long> ackBatchIdQueue = new ArrayBlockingQueue<>(10 * 1024);
 	private static ArrayBlockingQueue<Long> rollBackBatchIdQueue = new ArrayBlockingQueue<>(10 * 1024);
 
@@ -68,6 +71,8 @@ public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, 
 	@SneakyThrows
 	@Async
 	public void start() {
+		watchAckQueue();
+		watchRollBackQueue();
 		int emptyRunTimes = 0;
 		List<Integer> delayPullList = canalConfig.getDelayPullList();
 		while (true) {
@@ -84,32 +89,34 @@ public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, 
 		}
 	}
 
-	@Async
 	public void watchAckQueue() {
-		while (true) {
-			Long batchId = null;
-			try {
-				batchId = ackBatchIdQueue.take();
-				connector.ack(batchId);
-				log.info("ack成功: batchId[{}]", batchId);
-			} catch (InterruptedException e) {
-				log.error("ack失败: batchId[{}], \n {}", batchId, e);
+		watchAckRollBackExecutorService.execute(() -> {
+			while (true) {
+				Long batchId = null;
+				try {
+					batchId = ackBatchIdQueue.take();
+					connector.ack(batchId);
+					log.info("ack成功: batchId[{}]", batchId);
+				} catch (InterruptedException e) {
+					log.error("ack失败: batchId[{}], \n {}", batchId, e);
+				}
 			}
-		}
+		});
 	}
 
-	@Async
 	public void watchRollBackQueue() {
-		while (true) {
-			Long batchId = null;
-			try {
-				batchId = rollBackBatchIdQueue.take();
-				connector.rollback(batchId);
-				log.info("rollBack成功: batchId[{}]", batchId);
-			} catch (InterruptedException e) {
-				log.error("rollBack失败: batchId[{}], \n {}", batchId, e);
+		watchAckRollBackExecutorService.execute(() -> {
+			while (true) {
+				Long batchId = null;
+				try {
+					batchId = rollBackBatchIdQueue.take();
+					connector.rollback(batchId);
+					log.info("rollBack成功: batchId[{}]", batchId);
+				} catch (InterruptedException e) {
+					log.error("rollBack失败: batchId[{}], \n {}", batchId, e);
+				}
 			}
-		}
+		});
 	}
 
 	@SneakyThrows

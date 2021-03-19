@@ -17,8 +17,6 @@ public class CanalClientRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		haloCanalClient.watchAckQueue();
-		haloCanalClient.watchRollBackQueue();
 		haloCanalClient.start();
 	}
 
