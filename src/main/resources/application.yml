@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: halo-canal-app
+server:
+  port: 8899
+
+canal:
+  address-list:
+    - 192.168.0.105:11111
+  destination: example
+  handler-type-list:
+    - elasticsearch
+  delay-pull-list:
+    - 1
+    - 2
+    - 3
