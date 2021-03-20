@@ -1,4 +1,4 @@
-package com.halo.canal.config;
+package com.halo.canal.config.properties;
 
 import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
@@ -8,7 +8,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * canal配置文件
@@ -21,7 +23,7 @@ import java.util.List;
 @NoArgsConstructor
 @Component
 @ConfigurationProperties(prefix = "canal")
-public class CanalConfig {
+public class CanalConfigProperties {
 
 	private List<String> addressList = new ArrayList<>();
 
@@ -39,4 +41,18 @@ public class CanalConfig {
 
 	private List<String> handlerTypeList = Lists.newArrayList();
 
+	private ElasticSearchInfo elasticSearchInfo = new ElasticSearchInfo();
+
+	@Data
+	public static class ElasticSearchInfo {
+
+		private String indexPrefix = "indices";
+
+		private boolean enableIndexInit = false;
+
+		private List<String> indexFileNameList = new ArrayList<>();
+
+		private Map<String, String> indexNameIdFieldNameMap = new HashMap<>();
+
+	}
 }

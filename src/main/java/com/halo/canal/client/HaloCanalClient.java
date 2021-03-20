@@ -3,7 +3,7 @@ package com.halo.canal.client;
 import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.client.CanalConnectors;
 import com.alibaba.otter.canal.protocol.Message;
-import com.halo.canal.config.CanalConfig;
+import com.halo.canal.config.properties.CanalConfigProperties;
 import com.halo.canal.exception.HaloCanalException;
 import com.halo.canal.listener.event.MessageReceiveEvent;
 import com.halo.canal.listener.info.MessageReceiveInfo;
@@ -17,8 +17,10 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -45,7 +47,10 @@ import java.util.stream.Collectors;
 @Component
 public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, InitializingBean, DisposableBean {
 
-	private CanalConfig canalConfig;
+	@Autowired
+	private RedisTemplate<String, String> redisTemplate;
+
+	private CanalConfigProperties canalConfigProperties;
 	private CanalConnector connector;
 	private ApplicationContext applicationContext;
 	private ExecutorService watchAckRollBackExecutorService = Executors.newFixedThreadPool(2);
@@ -53,8 +58,8 @@ public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, 
 	private static ArrayBlockingQueue<Long> rollBackBatchIdQueue = new ArrayBlockingQueue<>(10 * 1024);
 
 	public void init() {
-		canalConfig = applicationContext.getBean(CanalConfig.class);
-		List<String> addressList = canalConfig.getAddressList();
+		canalConfigProperties = applicationContext.getBean(CanalConfigProperties.class);
+		List<String> addressList = canalConfigProperties.getAddressList();
 		if (CollectionUtils.isEmpty(addressList)) {
 			throw new HaloCanalException("启动失败: 服务地址不能空");
 		}
@@ -62,7 +67,7 @@ public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, 
 			String[] split = address.split(":");
 			return new InetSocketAddress(split[0], Integer.parseInt(split[1]));
 		}).collect(Collectors.toList());
-		connector = CanalConnectors.newClusterConnector(inetSocketAddressList, canalConfig.getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
+		connector = CanalConnectors.newClusterConnector(inetSocketAddressList, canalConfigProperties.getDestination(), canalConfigProperties.getUsername(), canalConfigProperties.getPassword());
 		connector.connect();
 		connector.subscribe(".*\\..*");
 		connector.rollback();
@@ -74,9 +79,9 @@ public class HaloCanalClient implements AutoCloseable, ApplicationContextAware, 
 		watchAckQueue();
 		watchRollBackQueue();
 		int emptyRunTimes = 0;
-		List<Integer> delayPullList = canalConfig.getDelayPullList();
+		List<Integer> delayPullList = canalConfigProperties.getDelayPullList();
 		while (true) {
-			Message message = connector.getWithoutAck(canalConfig.getBatchSize(), canalConfig.getTimeOutSeconds(), TimeUnit.SECONDS);
+			Message message = connector.getWithoutAck(canalConfigProperties.getBatchSize(), canalConfigProperties.getTimeOutSeconds(), TimeUnit.SECONDS);
 			long batchId = message.getId();
 			int size = message.getEntries().size();
 			if (batchId == -1 || size == 0) {

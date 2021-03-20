@@ -1,5 +1,6 @@
 package com.halo.canal.handler;
 
+import com.alibaba.otter.canal.client.adapter.support.Dml;
 import com.alibaba.otter.canal.protocol.Message;
 
 /**
@@ -23,5 +24,29 @@ public interface MessageHandler {
 	 * @param message 消息
 	 */
 	void onMessage(Message message);
+
+	/**
+	 * insert消息处理
+	 *
+	 * @param dml DML操作转换对象
+	 */
+	default void onInsertDml(Dml dml) {
+	}
+
+	/**
+	 * update消息处理
+	 *
+	 * @param dml DML操作转换对象
+	 */
+	default void onUpdateDml(Dml dml) {
+	}
+
+	/**
+	 * delete消息处理
+	 *
+	 * @param dml DML操作转换对象
+	 */
+	default void onDeleteDml(Dml dml) {
+	}
 
 }
