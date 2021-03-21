@@ -1,7 +1,7 @@
 spring:
   application:
     name: halo-canal-app
-  elasticsearch:
+  elasticsearch: #elasti
     rest:
       uris: 127.0.0.1:9200
       username: elastic
@@ -28,6 +28,7 @@ canal:
   destination: example
   handler-type-list:
     - elasticsearch
+    - fdemo
   delay-pull-list:
     - 1
     - 2
@@ -35,6 +36,7 @@ canal:
   elastic-search-info:
     enable-index-init: false
     index-file-name-list:
-      -
+      - demo_t_user.json
     index-name-id-field-name-map:
+      demo_t_user: id
 
