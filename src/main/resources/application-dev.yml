@@ -1,0 +1,18 @@
+canal:
+  address-list:
+    - 192.168.0.105:11111
+  destination: example
+  handler-type-list:
+    - elasticsearch
+    - fdemo
+  delay-pull-list:
+    - 1
+    - 2
+    - 3
+  elastic-search-info:
+    enable-index-init: false
+    index-file-name-list:
+      - demo_t_user.json
+    index-name-id-field-name-map:
+      demo_t_user: id
+
